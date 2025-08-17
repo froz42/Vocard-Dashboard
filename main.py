@@ -29,8 +29,10 @@ from objects import (
 
 from utils import (
     DISCORD_API_BASE_URL,
+    LOGGER,
     ROOT_DIR,
     LANGUAGES,
+    VERSION_REQUIRED,
     get_locale,
     requests_api,
     process_js_files,
@@ -159,12 +161,15 @@ async def ws_bot():
     try:
         header = websocket.headers
         if header.get("Authorization") != SETTINGS.password:
+            LOGGER.error(f"Incorrect password for WebSocket connection got={header.get('Authorization')} expected={SETTINGS.password}")
             return await websocket.close(1008, "Incorrect password!")
             
         if not (bot_id := header.get("User-Id")):
+            LOGGER.error("Invalid WebSocket connection: missing User-Id header")
             return await websocket.close(1001, "Missing user id!")
         
         if not check_version(header.get("Client-Version")):
+            LOGGER.error(f"Version mismatch: got={header.get('Client-Version')} expected={VERSION_REQUIRED}")
             return await websocket.close(1002, "Version mismatch!")
         
         await BotPool.create(bot_id, websocket._get_current_object())
